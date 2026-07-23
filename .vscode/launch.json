@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ProntoTixBackend}",
+            "name": "Debug ProntoTixBackend",
+            "target": "ProntoTixBackend",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug ProntoTixBackend"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ProntoTixBackend}",
+            "name": "Release ProntoTixBackend",
+            "target": "ProntoTixBackend",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release ProntoTixBackend"
+        }
+    ]
+}
