@@ -2,13 +2,23 @@ import Vapor
 
 struct TicketsController: RouteCollection {
     private let service: TicketService
+    private let authenticator: SupabaseAuthMiddleware
 
-    init(service: TicketService) {
+    init(
+        service: TicketService,
+        authenticator: SupabaseAuthMiddleware
+    ) {
         self.service = service
+        self.authenticator = authenticator
     }
 
     func boot(routes: RoutesBuilder) throws {
-        let tickets = routes.grouped("api", "tickets")
+        let tickets = routes
+            .grouped("api", "tickets")
+            .grouped(authenticator)
+            .grouped(
+                AuthenticatedUserContext.guardMiddleware()
+            )
 
         tickets.get(use: index)
         tickets.get(":id", use: show)
@@ -16,6 +26,9 @@ struct TicketsController: RouteCollection {
         tickets.put(":id", use: update)
         tickets.delete(":id", use: delete)
     }
+
+    // El resto de tus métodos permanece igual.
+
 
     func index(request: Request) async throws -> [TicketResponse] {
         try await service.getAll(on: request.db)
