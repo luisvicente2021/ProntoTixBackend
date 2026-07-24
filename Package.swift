@@ -30,6 +30,11 @@ let package = Package(
         .package(
             url: "https://github.com/vapor/fluent-postgres-driver.git",
             exact: "2.9.2"
+        ),
+
+        .package(
+            url: "https://github.com/vapor/jwt.git",
+            from: "4.2.2"
         )
     ],
 
@@ -50,6 +55,11 @@ let package = Package(
                 .product(
                     name: "FluentPostgresDriver",
                     package: "fluent-postgres-driver"
+                ),
+
+                .product(
+                    name: "JWT",
+                    package: "jwt"
                 )
             ]
         )

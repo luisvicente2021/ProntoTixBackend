@@ -34,8 +34,48 @@ app.middleware.use(
     at: .beginning
 )
 
-// Base de datos
+// Base de datoss
 try DatabaseConfiguration.configure(app)
+
+let supabaseConfiguration =
+    try SupabaseConfiguration.fromEnvironment()
+
+
+    let jwksURL = URI(
+    string: "\(supabaseConfiguration.url)/auth/v1/.well-known/jwks.json"
+)
+
+let jwksResponse = try app.client
+    .get(jwksURL)
+    .wait()
+
+guard jwksResponse.status == .ok else {
+    throw Abort(
+        .internalServerError,
+        reason: "No fue posible descargar las claves públicas de Supabase."
+    )
+}
+
+guard let body = jwksResponse.body,
+      let jwksJSON = body.getString(
+          at: body.readerIndex,
+          length: body.readableBytes
+      ),
+      !jwksJSON.isEmpty else {
+    throw Abort(
+        .internalServerError,
+        reason: "La respuesta JWKS de Supabase está vacía."
+    )
+}
+
+let jwtVerifier = try JWTVerifier(
+    jwksJSON: jwksJSON,
+    supabaseURL: supabaseConfiguration.url
+)
+
+let supabaseAuthenticator = SupabaseAuthMiddleware(
+    verifier: jwtVerifier
+)
 
 // Dependencias
 let ticketRepository = FluentTicketRepository()
@@ -47,7 +87,8 @@ let ticketService = DefaultTicketService(
 // Rutas de tickets
 try app.register(
     collection: TicketsController(
-        service: ticketService
+        service: ticketService,
+        authenticator: supabaseAuthenticator
     )
 )
 
