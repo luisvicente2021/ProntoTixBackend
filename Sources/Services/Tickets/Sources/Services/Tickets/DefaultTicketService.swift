@@ -1,5 +1,5 @@
 import Vapor
-import Fluent 
+import Fluent
 
 struct DefaultTicketService: TicketService {
     private let repository: TicketRepository
@@ -8,8 +8,13 @@ struct DefaultTicketService: TicketService {
         self.repository = repository
     }
 
-    func getAll(on database: Database) async throws -> [TicketResponse] {
-        let tickets = try await repository.findAll(on: database)
+    func getAll(
+        on database: Database
+    ) async throws -> [TicketResponse] {
+        let tickets =
+            try await repository.findAllWithClient(
+                on: database
+            )
 
         return tickets.map {
             $0.toResponse()
@@ -20,17 +25,20 @@ struct DefaultTicketService: TicketService {
         _ id: Int64,
         on database: Database
     ) async throws -> TicketResponse {
-        guard let ticket = try await repository.find(
-            id: id,
-            on: database
-        ) else {
+        guard let result =
+            try await repository.findWithClient(
+                id: id,
+                on: database
+            )
+        else {
             throw Abort(
                 .notFound,
-                reason: "No se encontró el ticket con ID \(id)."
+                reason:
+                    "No se encontró el ticket con ID \(id)."
             )
         }
 
-        return ticket.toResponse()
+        return result.toResponse()
     }
 
     func create(
@@ -56,7 +64,28 @@ struct DefaultTicketService: TicketService {
             on: database
         )
 
-        return ticket.toResponse()
+        guard let ticketId = ticket.id else {
+            throw Abort(
+                .internalServerError,
+                reason:
+                    "El ticket fue creado, pero no recibió un ID."
+            )
+        }
+
+        guard let result =
+            try await repository.findWithClient(
+                id: ticketId,
+                on: database
+            )
+        else {
+            throw Abort(
+                .internalServerError,
+                reason:
+                    "El ticket fue creado, pero no se pudo consultar."
+            )
+        }
+
+        return result.toResponse()
     }
 
     func update(
@@ -64,13 +93,16 @@ struct DefaultTicketService: TicketService {
         request: UpdateTicketRequest,
         on database: Database
     ) async throws -> TicketResponse {
-        guard let ticket = try await repository.find(
-            id: id,
-            on: database
-        ) else {
+        guard let ticket =
+            try await repository.find(
+                id: id,
+                on: database
+            )
+        else {
             throw Abort(
                 .notFound,
-                reason: "No se encontró el ticket con ID \(id)."
+                reason:
+                    "No se encontró el ticket con ID \(id)."
             )
         }
 
@@ -100,12 +132,18 @@ struct DefaultTicketService: TicketService {
             ticket.reportedBy = reportedBy
         }
 
-        if let reporterPhone = request.reporterPhone {
-            ticket.reporterPhone = reporterPhone
+        if let reporterPhone =
+            request.reporterPhone
+        {
+            ticket.reporterPhone =
+                reporterPhone
         }
 
-        if let department = request.department {
-            ticket.department = department
+        if let department =
+            request.department
+        {
+            ticket.department =
+                department
         }
 
         if let jobTitle = request.jobTitle {
@@ -117,20 +155,36 @@ struct DefaultTicketService: TicketService {
             on: database
         )
 
-        return ticket.toResponse()
+        guard let result =
+            try await repository.findWithClient(
+                id: id,
+                on: database
+            )
+        else {
+            throw Abort(
+                .internalServerError,
+                reason:
+                    "El ticket se actualizó, pero no se pudo consultar."
+            )
+        }
+
+        return result.toResponse()
     }
 
     func delete(
         id: Int64,
         on database: Database
     ) async throws {
-        guard let ticket = try await repository.find(
-            id: id,
-            on: database
-        ) else {
+        guard let ticket =
+            try await repository.find(
+                id: id,
+                on: database
+            )
+        else {
             throw Abort(
                 .notFound,
-                reason: "No se encontró el ticket con ID \(id)."
+                reason:
+                    "No se encontró el ticket con ID \(id)."
             )
         }
 

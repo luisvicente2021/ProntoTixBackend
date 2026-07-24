@@ -2,7 +2,14 @@ import Vapor
 import Fluent
 
 protocol TicketRepository {
-    func findAll(on database: Database) async throws -> [Ticket]
+    func findAllWithClient(
+        on database: Database
+    ) async throws -> [TicketWithClient]
+
+    func findWithClient(
+        id: Int64,
+        on database: Database
+    ) async throws -> TicketWithClient?
 
     func find(
         id: Int64,

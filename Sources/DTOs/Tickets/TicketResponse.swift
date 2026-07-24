@@ -3,6 +3,7 @@ import Vapor
 struct TicketResponse: Content {
     let id: Int64?
     let clientId: UUID
+    let clientName: String
     let title: String
     let description: String
     let priority: String
@@ -16,10 +17,13 @@ struct TicketResponse: Content {
 }
 
 extension Ticket {
-    func toResponse() -> TicketResponse {
+    func toResponse(
+        clientName: String
+    ) -> TicketResponse {
         TicketResponse(
             id: id,
             clientId: clientId,
+            clientName: clientName,
             title: title,
             description: description,
             priority: priority,
@@ -30,6 +34,14 @@ extension Ticket {
             reporterPhone: reporterPhone,
             department: department,
             jobTitle: jobTitle
+        )
+    }
+}
+
+extension TicketWithClient {
+    func toResponse() -> TicketResponse {
+        ticket.toResponse(
+            clientName: clientName
         )
     }
 }
