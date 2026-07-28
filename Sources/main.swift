@@ -92,6 +92,13 @@ try app.register(
     )
 )
 
+// Ruta del usuario autenticado
+try app.register(
+    collection: CurrentUserController(
+        authenticator: supabaseAuthenticator
+    )
+)
+
 // Ruta de prueba
 app.get {
     request async throws -> String in

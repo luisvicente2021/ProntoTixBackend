@@ -2,12 +2,16 @@ import Vapor
 import Fluent
 
 protocol TicketService {
-    func getAll(on database: Database) async throws -> [TicketResponse]
+    func getAll(
+    for profile: Profile,
+    on database: Database
+) async throws -> [TicketResponse]
 
     func getById(
-        _ id: Int64,
-        on database: Database
-    ) async throws -> TicketResponse
+    _ id: Int64,
+    for profile: Profile,
+    on database: Database
+) async throws -> TicketResponse
 
     func create(
         request: CreateTicketRequest,
