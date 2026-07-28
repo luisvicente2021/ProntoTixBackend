@@ -30,26 +30,58 @@ struct TicketsController: RouteCollection {
     // El resto de tus métodos permanece igual.
 
 
-    func index(request: Request) async throws -> [TicketResponse] {
-        try await service.getAll(on: request.db)
-    }
+   func index(request: Request) async throws -> [TicketResponse] {
+    let authenticatedUser = try request.auth.require(
+        AuthenticatedUserContext.self
+    )
 
-    func show(request: Request) async throws -> TicketResponse {
-        guard let id = request.parameters.get(
-            "id",
-            as: Int64.self
-        ) else {
-            throw Abort(
-                .badRequest,
-                reason: "El ID del ticket no es válido."
-            )
-        }
-
-        return try await service.getById(
-            id,
-            on: request.db
+    guard let profile = try await Profile.find(
+        authenticatedUser.userId,
+        on: request.db
+    ) else {
+        throw Abort(
+            .forbidden,
+            reason: "El usuario autenticado no tiene un perfil asignado."
         )
     }
+
+    return try await service.getAll(
+        for: profile,
+        on: request.db
+    )
+}
+
+    func show(request: Request) async throws -> TicketResponse {
+    guard let id = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID del ticket no es válido."
+        )
+    }
+
+    let authenticatedUser = try request.auth.require(
+        AuthenticatedUserContext.self
+    )
+
+    guard let profile = try await Profile.find(
+        authenticatedUser.userId,
+        on: request.db
+    ) else {
+        throw Abort(
+            .forbidden,
+            reason: "El usuario autenticado no tiene un perfil asignado."
+        )
+    }
+
+    return try await service.getById(
+        id,
+        for: profile,
+        on: request.db
+    )
+}
 
     func create(request: Request) async throws -> TicketResponse {
         let input = try request.content.decode(
