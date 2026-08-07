@@ -37,6 +37,8 @@ app.middleware.use(
 // Base de datoss
 try DatabaseConfiguration.configure(app)
 
+
+
 let supabaseConfiguration =
     try SupabaseConfiguration.fromEnvironment()
 
@@ -84,10 +86,18 @@ let ticketService = DefaultTicketService(
     repository: ticketRepository
 )
 
+let deliveryReportRepository =
+    FluentDeliveryReportRepository()
+
+let deliveryReportService =
+    DefaultDeliveryReportService(
+        repository: deliveryReportRepository
+    )
+
 // Rutas de tickets
 try app.register(
-    collection: TicketsController(
-        service: ticketService,
+    collection: DeliveryReportsController(
+        service: deliveryReportService,
         authenticator: supabaseAuthenticator
     )
 )
