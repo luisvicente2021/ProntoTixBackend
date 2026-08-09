@@ -28,6 +28,8 @@ struct DeliveryReportsController: RouteCollection {
 
         reports.post(use: create)
         reports.get(use: show)
+        reports.patch("files", use: updateFiles)
+        reports.post("evidence", use: addEvidence)
     }
 
     func create(
@@ -74,4 +76,54 @@ struct DeliveryReportsController: RouteCollection {
             on: request.db
         )
     }
+
+    func updateFiles(
+    request: Request
+) async throws -> DeliveryReportResponse {
+
+    guard let ticketId = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID del ticket no es válido."
+        )
+    }
+
+    let input = try request.content.decode(
+        UpdateDeliveryReportFilesRequest.self
+    )
+
+    return try await service.updateFiles(
+        ticketId: ticketId,
+        request: input,
+        on: request.db
+    )
+}
+
+func addEvidence(
+    request: Request
+) async throws -> HTTPStatus {
+
+    guard let ticketId = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID del ticket no es válido."
+        )
+    }
+
+    let input = try request.content.decode(
+        CreateDeliveryReportEvidenceRequest.self
+    )
+
+    return try await service.addEvidence(
+        ticketId: ticketId,
+        request: input,
+        on: request.db
+    )
+}
 }

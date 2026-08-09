@@ -43,4 +43,11 @@ struct FluentDeliveryReportRepository: DeliveryReportRepository {
             .filter(\.$reportId == reportId)
             .all()
     }
+
+    func createEvidence(
+    _ evidence: DeliveryReportEvidence,
+    on database: Database
+) async throws {
+    try await evidence.create(on: database)
+}
 }

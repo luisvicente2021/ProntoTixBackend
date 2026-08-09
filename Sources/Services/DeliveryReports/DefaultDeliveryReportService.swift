@@ -191,4 +191,104 @@ struct DefaultDeliveryReportService: DeliveryReportService {
             }
         )
     }
+
+    func updateFiles(
+    ticketId: Int64,
+    request: UpdateDeliveryReportFilesRequest,
+    on database: Database
+) async throws -> DeliveryReportResponse {
+
+    guard let report =
+        try await repository.findByTicketId(
+            ticketId: ticketId,
+            on: database
+        )
+    else {
+        throw Abort(
+            .notFound,
+            reason: "Este ticket no tiene reporte de entrega."
+        )
+    }
+
+    if let receiptUrl = request.receiptUrl {
+        report.receiptUrl = receiptUrl
+    }
+
+    if let signatureUrl = request.signatureUrl {
+        report.signatureUrl = signatureUrl
+    }
+
+    if let pdfUrl = request.pdfUrl {
+        report.pdfUrl = pdfUrl
+    }
+
+    try await report.update(on: database)
+
+    guard let reportId = report.id else {
+        throw Abort(
+            .internalServerError,
+            reason: "El reporte no tiene un ID válido."
+        )
+    }
+
+    let items = try await repository.findItems(
+        reportId: reportId,
+        on: database
+    )
+
+    return makeResponse(
+        report: report,
+        items: items
+    )
+}
+
+func addEvidence(
+    ticketId: Int64,
+    request: CreateDeliveryReportEvidenceRequest,
+    on database: Database
+) async throws -> HTTPStatus {
+
+    guard let report =
+        try await repository.findByTicketId(
+            ticketId: ticketId,
+            on: database
+        )
+    else {
+        throw Abort(
+            .notFound,
+            reason: "Este ticket no tiene reporte de entrega."
+        )
+    }
+
+    guard let reportId = report.id else {
+        throw Abort(
+            .internalServerError,
+            reason: "El reporte no tiene un ID válido."
+        )
+    }
+
+    let imageUrl = request.imageUrl
+        .trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+    guard !imageUrl.isEmpty else {
+        throw Abort(
+            .badRequest,
+            reason: "La ruta de la evidencia es obligatoria."
+        )
+    }
+
+    let evidence = DeliveryReportEvidence(
+        reportId: reportId,
+        imageUrl: imageUrl
+    )
+
+    try await repository.createEvidence(
+        evidence,
+        on: database
+    )
+
+    return .created
+}
 }

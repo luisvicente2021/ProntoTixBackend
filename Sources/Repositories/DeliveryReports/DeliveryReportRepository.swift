@@ -17,4 +17,9 @@ protocol DeliveryReportRepository {
         reportId: UUID,
         on database: Database
     ) async throws -> [DeliveryReportItem]
+
+    func createEvidence(
+    _ evidence: DeliveryReportEvidence,
+    on database: Database
+) async throws
 }
