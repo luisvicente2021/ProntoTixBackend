@@ -96,6 +96,14 @@ let deliveryReportService =
 
 // Rutas de tickets
 try app.register(
+    collection: TicketsController(
+        service: ticketService,
+        authenticator: supabaseAuthenticator
+    )
+)
+
+// Rutas de reportes de entrega
+try app.register(
     collection: DeliveryReportsController(
         service: deliveryReportService,
         authenticator: supabaseAuthenticator

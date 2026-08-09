@@ -15,7 +15,12 @@ struct DeliveryReportsController: RouteCollection {
 
     func boot(routes: RoutesBuilder) throws {
         let reports = routes
-            .grouped("api", "tickets", ":ticketId", "delivery-report")
+            .grouped(
+                "api",
+                "tickets",
+                ":id",
+                "delivery-report"
+            )
             .grouped(authenticator)
             .grouped(
                 AuthenticatedUserContext.guardMiddleware()
@@ -30,7 +35,7 @@ struct DeliveryReportsController: RouteCollection {
     ) async throws -> DeliveryReportResponse {
 
         guard let ticketId = request.parameters.get(
-            "ticketId",
+            "id",
             as: Int64.self
         ) else {
             throw Abort(
@@ -55,7 +60,7 @@ struct DeliveryReportsController: RouteCollection {
     ) async throws -> DeliveryReportResponse {
 
         guard let ticketId = request.parameters.get(
-            "ticketId",
+            "id",
             as: Int64.self
         ) else {
             throw Abort(
