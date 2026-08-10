@@ -94,6 +94,21 @@ let deliveryReportService =
         repository: deliveryReportRepository
     )
 
+let driverLocationRepository =
+    FluentDriverLocationRepository()
+
+let driverLocationService =
+    DefaultDriverLocationService(
+        repository: driverLocationRepository
+    )
+
+try app.register(
+    collection: DriverLocationController(
+        service: driverLocationService,
+        authenticator: supabaseAuthenticator
+    )
+)
+
 // Rutas de tickets
 try app.register(
     collection: TicketsController(
@@ -117,8 +132,10 @@ try app.register(
     )
 )
 
+
 try app.register(
     collection: DriverLocationController(
+        service: driverLocationService,
         authenticator: supabaseAuthenticator
     )
 )
