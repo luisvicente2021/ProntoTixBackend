@@ -18,13 +18,26 @@ struct DefaultDriverLocationService: DriverLocationService {
             on: database
         )
 
-        return locations.map { location in
-            DriverLocationResponse(
-                userId: location.userId,
-                latitude: location.latitude,
-                longitude: location.longitude,
-                updatedAt: location.updatedAt
+        var result: [DriverLocationResponse] = []
+
+        for location in locations {
+
+            let profile = try await Profile.find(
+                location.userId,
+                on: database
+            )
+
+            result.append(
+                DriverLocationResponse(
+                    userId: location.userId,
+                    name: profile?.name,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    updatedAt: location.updatedAt
+                )
             )
         }
+
+        return result
     }
 }
