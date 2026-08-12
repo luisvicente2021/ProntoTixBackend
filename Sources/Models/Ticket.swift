@@ -10,6 +10,9 @@ final class Ticket: Model, Content {
     @Field(key: "cliente_id")
     var clientId: UUID
 
+    @OptionalField(key: "assigned_user_id")
+    var assignedUserId: UUID?
+
     @Field(key: "titulo")
     var title: String
 
@@ -45,6 +48,7 @@ final class Ticket: Model, Content {
     init(
         id: Int64? = nil,
         clientId: UUID,
+        assignedUserId: UUID? = nil,
         title: String,
         description: String,
         priority: String,
@@ -58,6 +62,7 @@ final class Ticket: Model, Content {
     ) {
         self.id = id
         self.clientId = clientId
+        self.assignedUserId = assignedUserId
         self.title = title
         self.description = description
         self.priority = priority
