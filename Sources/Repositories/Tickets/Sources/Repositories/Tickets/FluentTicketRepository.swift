@@ -2,9 +2,11 @@ import Fluent
 import Vapor
 
 struct FluentTicketRepository: TicketRepository {
+
     func findAllWithClient(
         on database: Database
     ) async throws -> [TicketWithClient] {
+
         let tickets = try await Ticket
             .query(on: database)
             .join(
@@ -17,22 +19,46 @@ struct FluentTicketRepository: TicketRepository {
             )
             .all()
 
-        return try tickets.map { ticket in
+        var result: [TicketWithClient] = []
+
+        for ticket in tickets {
+
             let client = try ticket.joined(
                 Client.self
             )
 
-            return TicketWithClient(
-                ticket: ticket,
-                clientName: client.name
+            var assignedUserName: String? = nil
+
+            if let assignedUserId =
+                ticket.assignedUserId {
+
+                let profile = try await Profile.find(
+                    assignedUserId,
+                    on: database
+                )
+
+                assignedUserName =
+                    profile?.name
+            }
+
+            result.append(
+                TicketWithClient(
+                    ticket: ticket,
+                    clientName: client.name,
+                    assignedUserName:
+                        assignedUserName
+                )
             )
         }
+
+        return result
     }
 
     func findWithClient(
         id: Int64,
         on database: Database
     ) async throws -> TicketWithClient? {
+
         guard let ticket = try await Ticket
             .query(on: database)
             .filter(\.$id == id)
@@ -49,9 +75,25 @@ struct FluentTicketRepository: TicketRepository {
             Client.self
         )
 
+        var assignedUserName: String? = nil
+
+        if let assignedUserId =
+            ticket.assignedUserId {
+
+            let profile = try await Profile.find(
+                assignedUserId,
+                on: database
+            )
+
+            assignedUserName =
+                profile?.name
+        }
+
         return TicketWithClient(
             ticket: ticket,
-            clientName: client.name
+            clientName: client.name,
+            assignedUserName:
+                assignedUserName
         )
     }
 
@@ -59,6 +101,7 @@ struct FluentTicketRepository: TicketRepository {
         id: Int64,
         on database: Database
     ) async throws -> Ticket? {
+
         try await Ticket.find(
             id,
             on: database
@@ -69,6 +112,7 @@ struct FluentTicketRepository: TicketRepository {
         _ ticket: Ticket,
         on database: Database
     ) async throws {
+
         try await ticket.create(
             on: database
         )
@@ -78,6 +122,7 @@ struct FluentTicketRepository: TicketRepository {
         _ ticket: Ticket,
         on database: Database
     ) async throws {
+
         try await ticket.update(
             on: database
         )
@@ -87,6 +132,7 @@ struct FluentTicketRepository: TicketRepository {
         _ ticket: Ticket,
         on database: Database
     ) async throws {
+
         try await ticket.delete(
             on: database
         )
