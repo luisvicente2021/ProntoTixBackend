@@ -12,50 +12,94 @@ struct DefaultTicketService: TicketService {
     for profile: Profile,
     on database: Database
 ) async throws -> [TicketResponse] {
+
     let normalizedRole = profile.role
-        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
         .lowercased()
 
     let fullAccessRoles: Set<String> = [
         "admin",
         "administrador",
-        "soporte",
-        "tecnico",
-        "técnico"
+        "soporte"
     ]
 
-    let query = Ticket.query(on: database)
+    let driverRoles: Set<String> = [
+        "tecnico",
+        "técnico",
+        "diligenciero"
+    ]
 
-    if !fullAccessRoles.contains(normalizedRole) {
-        guard let clientId = profile.clientId else {
+    let query = Ticket.query(
+        on: database
+    )
+
+    if driverRoles.contains(
+        normalizedRole
+    ) {
+
+        guard let userId = profile.id else {
             throw Abort(
                 .forbidden,
-                reason: "El usuario no tiene un residencial asignado."
+                reason:
+                    "El diligenciero no tiene un identificador válido."
             )
         }
 
-        query.filter(\.$clientId == clientId)
+        query.filter(
+            \.$assignedUserId == userId
+        )
+
+    } else if !fullAccessRoles.contains(
+        normalizedRole
+    ) {
+
+        guard let clientId =
+            profile.clientId
+        else {
+            throw Abort(
+                .forbidden,
+                reason:
+                    "El usuario no tiene un residencial asignado."
+            )
+        }
+
+        query.filter(
+            \.$clientId == clientId
+        )
     }
 
     let tickets = try await query
-        .sort(\.$openedAt, .descending)
+        .sort(
+            \.$openedAt,
+            .descending
+        )
         .all()
 
     var responses: [TicketResponse] = []
 
     for ticket in tickets {
-        guard let ticketId = ticket.id else {
+
+        guard let ticketId =
+            ticket.id
+        else {
             continue
         }
 
-        guard let result = try await repository.findWithClient(
-            id: ticketId,
-            on: database
-        ) else {
+        guard let result =
+            try await repository
+                .findWithClient(
+                    id: ticketId,
+                    on: database
+                )
+        else {
             continue
         }
 
-        responses.append(result.toResponse())
+        responses.append(
+            result.toResponse()
+        )
     }
 
     return responses
@@ -66,38 +110,70 @@ struct DefaultTicketService: TicketService {
     for profile: Profile,
     on database: Database
 ) async throws -> TicketResponse {
-    guard let result = try await repository.findWithClient(
-        id: id,
-        on: database
-    ) else {
+
+    guard let result =
+        try await repository.findWithClient(
+            id: id,
+            on: database
+        )
+    else {
         throw Abort(
             .notFound,
-            reason: "Ticket no encontrado."
+            reason:
+                "Diligencia no encontrada."
         )
     }
 
     let ticket = result.ticket
 
     let normalizedRole = profile.role
-        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
         .lowercased()
 
     let fullAccessRoles: Set<String> = [
         "admin",
         "administrador",
-        "soporte",
-        "tecnico",
-        "técnico"
+        "soporte"
     ]
 
-    if !fullAccessRoles.contains(normalizedRole) {
+    let driverRoles: Set<String> = [
+        "tecnico",
+        "técnico",
+        "diligenciero"
+    ]
+
+    if driverRoles.contains(
+        normalizedRole
+    ) {
+
         guard
-            let profileClientId = profile.clientId,
-            ticket.clientId == profileClientId
+            let userId = profile.id,
+            ticket.assignedUserId ==
+                userId
         else {
             throw Abort(
                 .forbidden,
-                reason: "No tienes permiso para consultar este ticket."
+                reason:
+                    "Esta diligencia no está asignada a este usuario."
+            )
+        }
+
+    } else if !fullAccessRoles.contains(
+        normalizedRole
+    ) {
+
+        guard
+            let profileClientId =
+                profile.clientId,
+            ticket.clientId ==
+                profileClientId
+        else {
+            throw Abort(
+                .forbidden,
+                reason:
+                    "No tienes permiso para consultar esta diligencia."
             )
         }
     }
