@@ -29,6 +29,14 @@ struct TicketsController: RouteCollection {
         tickets
     .grouped(":id", "assignment")
     .patch(use: assignDriver)
+
+    tickets
+    .grouped(":id", "archive")
+    .patch(use: archive)
+
+tickets
+    .grouped(":id", "unarchive")
+    .patch(use: unarchive)
     }
 
     // El resto de tus métodos permanece igual.
@@ -294,4 +302,92 @@ struct TicketsController: RouteCollection {
 
         return .noContent
     }
+
+    func archive(
+    request: Request
+) async throws -> Ticket {
+
+    let user = try request.auth.require(
+        AuthenticatedUserContext.self
+    )
+
+    guard user.canViewAllTickets else {
+        throw Abort(
+            .forbidden,
+            reason: "No tienes permiso para archivar diligencias."
+        )
+    }
+
+    guard let ticketId = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID de la diligencia no es válido."
+        )
+    }
+
+    guard let ticket = try await Ticket.find(
+        ticketId,
+        on: request.db
+    ) else {
+        throw Abort(
+            .notFound,
+            reason: "La diligencia no existe."
+        )
+    }
+
+    ticket.archivedAt = Date()
+
+    try await ticket.update(
+        on: request.db
+    )
+
+    return ticket
+}
+
+func unarchive(
+    request: Request
+) async throws -> Ticket {
+
+    let user = try request.auth.require(
+        AuthenticatedUserContext.self
+    )
+
+    guard user.canViewAllTickets else {
+        throw Abort(
+            .forbidden,
+            reason: "No tienes permiso para restaurar diligencias."
+        )
+    }
+
+    guard let ticketId = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID de la diligencia no es válido."
+        )
+    }
+
+    guard let ticket = try await Ticket.find(
+        ticketId,
+        on: request.db
+    ) else {
+        throw Abort(
+            .notFound,
+            reason: "La diligencia no existe."
+        )
+    }
+
+    ticket.archivedAt = nil
+
+    try await ticket.update(
+        on: request.db
+    )
+
+    return ticket
+}
 }

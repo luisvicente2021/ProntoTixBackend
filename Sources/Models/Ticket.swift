@@ -43,6 +43,9 @@ final class Ticket: Model, Content {
     @OptionalField(key: "puesto")
     var jobTitle: String?
 
+    @OptionalField(key: "archived_at")
+    var archivedAt: Date?
+
     init() {}
 
     init(
@@ -58,7 +61,8 @@ final class Ticket: Model, Content {
         reportedBy: String? = nil,
         reporterPhone: String? = nil,
         department: String? = nil,
-        jobTitle: String? = nil
+        jobTitle: String? = nil,
+        archivedAt: Date? = nil
     ) {
         self.id = id
         self.clientId = clientId
@@ -73,5 +77,6 @@ final class Ticket: Model, Content {
         self.reporterPhone = reporterPhone
         self.department = department
         self.jobTitle = jobTitle
+        self.archivedAt = archivedAt
     }
 }

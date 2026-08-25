@@ -32,8 +32,14 @@ struct DefaultTicketService: TicketService {
     ]
 
     let query = Ticket.query(
-        on: database
-    )
+    on: database
+)
+
+// El listado normal solamente muestra
+// diligencias que no han sido archivadas.
+query.filter(
+    \.$archivedAt == nil
+)
 
     if driverRoles.contains(
         normalizedRole

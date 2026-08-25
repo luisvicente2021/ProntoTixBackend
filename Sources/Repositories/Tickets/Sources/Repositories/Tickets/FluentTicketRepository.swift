@@ -7,9 +7,12 @@ struct FluentTicketRepository: TicketRepository {
         on database: Database
     ) async throws -> [TicketWithClient] {
 
-        let tickets = try await Ticket
-            .query(on: database)
-            .join(
+       let tickets = try await Ticket
+    .query(on: database)
+    .filter(
+        \.$archivedAt == nil
+    )
+    .join(
                 Client.self,
                 on: \Ticket.$clientId == \Client.$id
             )
