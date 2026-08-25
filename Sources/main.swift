@@ -132,16 +132,14 @@ try app.register(
     )
 )
 
-
 try app.register(
-    collection: DriverLocationController(
-        service: driverLocationService,
+    collection: DriversController(
         authenticator: supabaseAuthenticator
     )
 )
 
 try app.register(
-    collection: DriversController(
+    collection: DriverShiftController(
         authenticator: supabaseAuthenticator
     )
 )
