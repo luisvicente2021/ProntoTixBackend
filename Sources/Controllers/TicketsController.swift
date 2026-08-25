@@ -168,27 +168,113 @@ struct TicketsController: RouteCollection {
         )
     }
 
-    func update(request: Request) async throws -> TicketResponse {
-        guard let id = request.parameters.get(
-            "id",
-            as: Int64.self
-        ) else {
+    func update(
+    request: Request
+) async throws -> TicketResponse {
+
+    guard let id = request.parameters.get(
+        "id",
+        as: Int64.self
+    ) else {
+        throw Abort(
+            .badRequest,
+            reason: "El ID del ticket no es válido."
+        )
+    }
+
+    let user = try request.auth.require(
+        AuthenticatedUserContext.self
+    )
+
+    guard let ticket = try await Ticket.find(
+        id,
+        on: request.db
+    ) else {
+        throw Abort(
+            .notFound,
+            reason: "La diligencia no existe."
+        )
+    }
+
+    let input = try request.content.decode(
+        UpdateTicketRequest.self
+    )
+
+    let normalizedRole = user.role
+        .trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        .lowercased()
+
+    // MARK: - Permisos del diligenciero
+
+    if normalizedRole == "tecnico" {
+
+        // El diligenciero solamente puede modificar
+        // diligencias que estén asignadas a él.
+        guard ticket.assignedUserId == user.userId else {
             throw Abort(
-                .badRequest,
-                reason: "El ID del ticket no es válido."
+                .forbidden,
+                reason:
+                    "No tienes permiso para actualizar esta diligencia."
             )
         }
 
-        let input = try request.content.decode(
-            UpdateTicketRequest.self
-        )
+        if let status = input.status {
 
-        return try await service.update(
-            id: id,
-            request: input,
-            on: request.db
-        )
+            let allowedStatuses: Set<String> = [
+                "Abierta",
+                "En Proceso",
+                "Pendiente Aprobacion"
+            ]
+
+            guard allowedStatuses.contains(status) else {
+                throw Abort(
+                    .forbidden,
+                    reason:
+                        "El diligenciero no puede cerrar definitivamente la diligencia."
+                )
+            }
+        }
     }
+
+    // MARK: - Permisos administrativos
+
+    if normalizedRole != "tecnico" {
+
+        guard user.canViewAllTickets else {
+            throw Abort(
+                .forbidden,
+                reason:
+                    "No tienes permiso para actualizar diligencias."
+            )
+        }
+
+        if let status = input.status {
+
+            let allowedStatuses: Set<String> = [
+                "Abierta",
+                "En Proceso",
+                "Pendiente Aprobacion",
+                "Cerrada"
+            ]
+
+            guard allowedStatuses.contains(status) else {
+                throw Abort(
+                    .badRequest,
+                    reason:
+                        "El estado solicitado no es válido."
+                )
+            }
+        }
+    }
+
+    return try await service.update(
+        id: id,
+        request: input,
+        on: request.db
+    )
+}
 
     func delete(request: Request) async throws -> HTTPStatus {
         guard let id = request.parameters.get(
