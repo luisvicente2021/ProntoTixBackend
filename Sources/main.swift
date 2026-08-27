@@ -144,6 +144,14 @@ try app.register(
     )
 )
 
+try app.register(
+    collection:
+        DriverTrackingEventController(
+            authenticator:
+                supabaseAuthenticator
+        )
+)
+
 // Ruta de prueba
 app.get {
     request async throws -> String in
